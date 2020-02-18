@@ -10,6 +10,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 import org.apache.log4j.Logger;
 
@@ -29,6 +30,8 @@ maxRequestSize = 1024 * 1024 * 5 * 5)
 public class DocServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static Logger logger = Logger.getLogger(DocServlet.class);
+	
+	private static final String UPLOAD_DIRECTORY = "uploads";
 	
 	private static final String VIEW_PATH="views/docs/";
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -93,13 +96,16 @@ public class DocServlet extends HttpServlet {
 			Document item = dm.getById(id);
 			if(item!=null)
 				dm.delete(item);
+			//TODO : delete file/document
 		}
 		else if(request.getParameter("btn_add_action")!=null) {		
 			logger.info("===========>ADD!");
-			
+	
 			Document doc = fromForm(request);
-			if(doc!=null)
+			if(doc!=null) {										
+				uploadFile(request, doc);				
 				dm.add(doc);
+			}
 		}
 		else if(request.getParameter("btn_update_action")!=null) {
 			logger.info("===========>UPDATE!");
@@ -112,10 +118,32 @@ public class DocServlet extends HttpServlet {
 		doGet(request, response);
 	}
 
+	private void uploadFile(HttpServletRequest request, Document doc) throws IOException, ServletException {
+		String uploadPath = getServletContext().getRealPath("") + File.separator + UPLOAD_DIRECTORY;
+		File uploadDir = new File(uploadPath);
+		if (!uploadDir.exists()) uploadDir.mkdir();
+
+		for (Part part : request.getParts()) {
+			String fileName = getFileName(part);	    
+			if(fileName!=null) {
+				
+				doc.setPath(fileName);
+				
+				logit("POST - upload : fileName = "+uploadPath + File.separator + fileName);
+				part.write(uploadPath + File.separator + fileName);
+			}
+		}
+		
+	}
+
 	private Document fromForm(HttpServletRequest request) {
 		int id = Integer.parseInt(request.getParameter("id"));
 		String name=request.getParameter("name");
-		String path=request.getParameter("path");
+		
+		String path="";
+		
+		//path = request.getParameter("path");
+		
 		byte type=Byte.parseByte(request.getParameter("type"));
 		int user_id=Integer.parseInt(request.getParameter("user"));
 		User user = new UserManager().getById(user_id);
@@ -124,6 +152,25 @@ public class DocServlet extends HttpServlet {
 		
 		Document doc = new Document(id, name, path ,type, user);
 		return doc;
+	}
+	
+	private String getFileName(Part part) {
+		for (String content : part.getHeader("content-disposition").split(";"))	    	
+			if (content.trim().startsWith("filename")) {
+
+				String temp = content.substring(content.indexOf("=") + 2, content.length() - 1);
+				File f = new File(temp);
+
+				String filename = temp.substring(f.getParent().length()+1);
+				logit("content : "+filename);	
+				return filename;    
+			}
+		return null;
+	}
+	private void logit(String message) {
+		logger.info("===========================================");
+		logger.info(message);
+		logger.info("===========================================");
 	}
 
 }

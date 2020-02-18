@@ -9,7 +9,8 @@
 			class="fa fa-list"></i>
 		</a> Documents : ${title}
 	</h3>
-	<form action="${pageContext.request.contextPath}/docs" method="post">
+	<form action="${pageContext.request.contextPath}/docs" method="post"
+		enctype="multipart/form-data">
 		<c:if test="${not empty message}">
 			<div class="alert alert-danger" role="alert">${message}</div>
 		</c:if>
@@ -25,9 +26,12 @@
 			<div class="input-group-prepend">
 				<span class="input-group-text"><i class="fa fa-file-text"></i></span>
 			</div>
-			<input type="text" class="form-control" placeholder="path"
-				name="path" />
+			<!-- <input type="text" class="form-control" placeholder="path"
+				name="path" /> -->
+			<input type="file" class="custom-file-input" id="customFile" name="filename"> 
+			<label class="custom-file-label" for="customFile"><i class="fa fa-file-o"></i> Choose file</label>
 		</div>
+
 		<div class="input-group form-group">
 			<div class="input-group-prepend">
 				<span class="input-group-text"><i class="fa fa-th-list"></i></span>
@@ -59,3 +63,9 @@
 	</form>
 </div>
 <jsp:include page="../shared/footer.jsp" />   
+<script>
+$(".custom-file-input").on("change", function() {
+  var fileName = $(this).val().split("\\").pop();
+  $(this).siblings(".custom-file-label").addClass("selected").html('<i class="fa fa-file-o"></i> '+fileName);
+});
+</script>
